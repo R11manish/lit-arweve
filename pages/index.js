@@ -25,9 +25,57 @@ export default function Home() {
   }
 
   async function uploadFile() {
-    let tx = await bundlrInstance.uploader.upload(encryptedFile, [{ name: "Content-Type", value: "text/plain" }])
-    setURI(`http://arweave.net/${tx.data.id}`)
+    if (!encryptedFile) return null;
+    console.log('before encryption', encryptedFile)
+    const stringToUpload = await blobToDataURI(encryptedFile);
+    console.log(stringToUpload);
+    let tx = await bundlrInstance.uploader.upload(stringToUpload, [{ name: "Content-Type", value: "text/plain" }])
+    setURI(`http://arweave.net/${tx.data.id}`);
+    console.log(URI)
+  }
 
+  const blobToDataURI = (blob) => {
+    return new Promise((resolve, reject) => {
+      var reader = new FileReader();
+
+      reader.onload = (e) => {
+        var data = e.target.result;
+        resolve(data);
+      };
+      reader.readAsDataURL(blob);
+    });
+  }
+
+
+  const dataURItoBlob = (dataURI) => {
+
+    console.log(dataURI);
+
+
+    var byteString = window.atob(dataURI.split(',')[1]);
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+    var ab = new ArrayBuffer(byteString.length);
+    var ia = new Uint8Array(ab);
+    for (var i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+
+    var blob = new Blob([ab], { type: mimeString });
+
+    return blob;
+  }
+
+  async function onFetchEncryptedData() {
+    try {
+      const response = await fetch(URI);
+      let fetchdata = await response.text();
+      fetchdata = dataURItoBlob(fetchdata);
+      console.log('before decryption', fetchData)
+      setEncryptedFile(fetchdata)
+      console.log(fetchdata)
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   async function fundWallet() {
@@ -96,10 +144,8 @@ export default function Home() {
             >Fetch Data for Encryption</button>
 
             <button onClick={uploadFile}>Upload File to Arweave</button>
+            <button onClick={onFetchEncryptedData}>Fetch File from Arweave</button>
             <button onClick={handleDecryption}>Decrypt file from Arweave</button>
-            {
-              data && console.log(data)
-            }
             {
               URI && <a href={URI}>{URI}</a>
             }
