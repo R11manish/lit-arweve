@@ -65,9 +65,7 @@ class Lit {
       symmetricKey
     );
 
-    console.log({
-      decryptedFile
-    })
+
     return { decryptedFile }
   }
 }
